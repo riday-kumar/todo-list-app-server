@@ -29,7 +29,9 @@ async function run() {
 
     const toToDB = client.db("focus_flue");
     const usersCollection = toToDB.collection("users");
+    const tasksCollection = toToDB.collection("tasks");
 
+    // user created api
     app.post("/users", async (req, res) => {
       const email = req.body.email;
       const existingUser = await usersCollection.findOne({ email });
@@ -42,6 +44,14 @@ async function run() {
       }
 
       res.send({ success: true });
+    });
+
+    // task create api
+    app.post("/add-task", async (req, res) => {
+      // console.log(req.body);
+      const newTask = req.body;
+      const result = await tasksCollection.insertOne(newTask);
+      res.send(result);
     });
 
     await client.db("admin").command({ ping: 1 });
