@@ -26,6 +26,24 @@ async function run() {
   try {
     // connect the client to the server
     await client.connect();
+
+    const toToDB = client.db("focus_flue");
+    const usersCollection = toToDB.collection("users");
+
+    app.post("/users", async (req, res) => {
+      const email = req.body.email;
+      const existingUser = await usersCollection.findOne({ email });
+
+      if (!existingUser) {
+        await usersCollection.insertOne({
+          email,
+          createdAt: new Date(),
+        });
+      }
+
+      res.send({ success: true });
+    });
+
     await client.db("admin").command({ ping: 1 });
     console.log("successfully connected with MongoDB");
   } finally {
@@ -33,7 +51,8 @@ async function run() {
   }
 }
 
+run().catch(console.dir);
+
 app.listen(port, () => {
   console.log(`server is running on port ${port}`);
 });
-run().catch(console.dir);
