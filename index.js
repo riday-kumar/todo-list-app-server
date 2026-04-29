@@ -84,7 +84,7 @@ async function run() {
       if (query !== req.token_email) {
         return res.status(403).send({ message: "Forbidden Access" });
       }
-      const filter = { userEmail: query };
+      const filter = { userEmail: query, completedTask: false };
       const cursor = tasksCollection.find(filter);
       const result = await cursor.toArray();
       res.send(result);
@@ -123,6 +123,23 @@ async function run() {
         },
       };
       const result = await tasksCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // task complete api
+    app.patch("/task-complete/:taskId", verifyFBToken, async (req, res) => {
+      const filter = { _id: new ObjectId(req.params.taskId) };
+      // console.log(filter);
+      const query = req.query.email;
+      if (query !== req.token_email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      const updateTask = {
+        $set: {
+          completedTask: true,
+        },
+      };
+      const result = await tasksCollection.updateOne(filter, updateTask);
       res.send(result);
     });
 
