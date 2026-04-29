@@ -1,16 +1,44 @@
 require("dotenv").config();
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-var cors = require("cors");
+const cors = require("cors");
 const app = express();
 const port = process.env.PORT || 3000;
+
+const admin = require("firebase-admin");
+
+const serviceAccount = require("./fbaccountkey.json");
+const { getAuth } = require("firebase-admin/auth");
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
 // middleware
 app.use(cors());
 app.use(express.json());
 
-const verifyFBToken = (req, res, next) => {
-  next();
+const verifyFBToken = async (req, res, next) => {
+  const queryEmail = req.query.email;
+  const myToken = req.headers.authorization;
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const getToken = myToken.split(" ")[1];
+  if (!getToken) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+
+  try {
+    const decode = await getAuth()
+      .verifyIdToken(getToken)
+      .then((decoded) => {
+        req.token_email = decoded.email;
+        next();
+      });
+  } catch {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
 };
 
 app.get("/", (req, res) => {
@@ -53,8 +81,11 @@ async function run() {
     // all task getting api
     app.get("/all-task", verifyFBToken, async (req, res) => {
       const query = req.query.email;
-      // console.log(query);
-      const cursor = tasksCollection.find();
+      if (query !== req.token_email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+      const filter = { userEmail: query };
+      const cursor = tasksCollection.find(filter);
       const result = await cursor.toArray();
       res.send(result);
     });
@@ -68,16 +99,20 @@ async function run() {
     });
 
     // task create api
-    app.post("/add-task", async (req, res) => {
+    app.post("/add-task", verifyFBToken, async (req, res) => {
       // console.log(req.body);
       const newTask = req.body;
+      const query = req.query.email;
+      if (query !== req.token_email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
       const result = await tasksCollection.insertOne(newTask);
       res.send(result);
     });
 
-    // task update
+    // task update api
     app.patch("/update-task/:taskId", async (req, res) => {
-      console.log(req.params.taskId);
+      // console.log(req.params.taskId);
       const filter = { _id: new ObjectId(req.params.taskId) };
       const updateDoc = {
         $set: {
@@ -88,6 +123,20 @@ async function run() {
         },
       };
       const result = await tasksCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // task Delete api
+    app.delete("/delete-task/:taskId", verifyFBToken, async (req, res) => {
+      const param = req.params.taskId;
+      const filter = { _id: new ObjectId(param) };
+
+      const query = req.query.email;
+      if (query !== req.token_email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+
+      const result = await tasksCollection.deleteOne(filter);
       res.send(result);
     });
 
