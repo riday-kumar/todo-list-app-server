@@ -98,6 +98,26 @@ async function run() {
       res.send(result);
     });
 
+    // task show according to the calender of certain user
+    app.get("/all-date-task/:date", verifyFBToken, async (req, res) => {
+      const query = req.query.email;
+      // const taskDate = new Date(req.params.date);
+      const taskDate = req.params.date;
+
+      if (query !== req.token_email) {
+        return res.status(403).send({ message: "Forbidden Access" });
+      }
+
+      const filter = {
+        userEmail: query,
+        completedTask: false,
+        taskTime: taskDate,
+      };
+      const cursor = tasksCollection.find(filter);
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     // task create api
     app.post("/add-task", verifyFBToken, async (req, res) => {
       // console.log(req.body);
