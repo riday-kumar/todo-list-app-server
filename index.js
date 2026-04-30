@@ -62,7 +62,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // connect the client to the server
-    await client.connect();
+    // await client.connect();
 
     const toToDB = client.db("focus_flue");
     const usersCollection = toToDB.collection("users");
