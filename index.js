@@ -84,7 +84,7 @@ async function run() {
       if (query !== req.token_email) {
         return res.status(403).send({ message: "Forbidden Access" });
       }
-      const filter = { userEmail: query, completedTask: false };
+      const filter = { userEmail: query };
       const cursor = tasksCollection.find(filter);
       const result = await cursor.toArray();
       res.send(result);
@@ -177,7 +177,7 @@ async function run() {
       res.send(result);
     });
 
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log("successfully connected with MongoDB");
   } finally {
     // await client.close()
