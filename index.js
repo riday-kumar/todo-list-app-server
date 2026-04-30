@@ -84,7 +84,7 @@ async function run() {
     });
 
     // all task getting api
-    app.get("/all-task", verifyFBToken, async (req, res) => {
+    app.get("/all-task", async (req, res) => {
       const query = req.query.email;
       if (query !== req.token_email) {
         return res.status(403).send({ message: "Forbidden Access" });
